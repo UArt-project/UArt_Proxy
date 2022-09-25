@@ -4,11 +4,11 @@ package marketdomain
 // MarketItem represents a market item.
 type MarketItem struct {
 	// The ID of the item.
-	ID string `json:"id"`
+	ID string
 	// The name of the item.
-	Name string `json:"name"`
+	Name string
 	// The price of the item.
-	Price float64 `json:"price"`
+	Price float64
 	// Photo of the item.
-	Photo string `json:"photo"`
+	Photo string
 }
