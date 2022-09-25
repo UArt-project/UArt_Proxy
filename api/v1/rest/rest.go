@@ -29,6 +29,8 @@ func NewRESTApi(appService service.AppService, loggr *logger.Logger) *RESTApi {
 		router:     router,
 	}
 
+	api.HandleFuncs()
+
 	return api
 }
 
@@ -60,7 +62,7 @@ func (r *RESTApi) getMarketPage(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	response := itemsToResponse(items)
+	response := itemsToResponse(page, items)
 
 	encData, err := jsonoperations.Encode(response)
 	if err != nil {
