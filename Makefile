@@ -6,7 +6,7 @@ docker-build:
 
 docker-run:
 	echo "Running on port 8000"
-	docker run -d -p 8000:8000 --name uart-proxy uart-proxy
+	docker run --rm -d -p 8000:8000 --name uart-proxy uart-proxy
 
 docker-stop:
 	docker stop uart-proxy
