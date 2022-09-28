@@ -32,7 +32,7 @@ func NewMarketServiceClient(url string) *MarketServiceClient {
 func (c MarketServiceClient) GetPage(page int) ([]*marketdomain.MarketItem, error) {
 	httpClient := http.Client{}
 
-	req, err := http.NewRequest("GET", c.url+"/v1/market/0", nil)
+	req, err := http.NewRequest("GET", c.url+"/marketplace/v1/items/0", nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating request for getting the page of items: %w", err)
 	}
