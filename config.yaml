@@ -1,6 +1,7 @@
 worker_pool_size: 8
 
-market_service_url: http://localhost:8080
+# market_service_url: http://localhost:8080
+market_service_url: http://uart-marketplace:8080
 
 server:
   address: ":8000"

@@ -2,7 +2,12 @@
 package marketclient
 
 import (
+	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/UArt-project/UArt-proxy/domain/marketdomain"
+	"github.com/UArt-project/UArt-proxy/pkg/jsonoperations"
 )
 
 type MarketClient interface {
@@ -25,33 +30,29 @@ func NewMarketServiceClient(url string) *MarketServiceClient {
 
 // GetPage returns a page of market items.
 func (c MarketServiceClient) GetPage(page int) ([]*marketdomain.MarketItem, error) {
-	/*
-		httpClient := http.Client{}
+	httpClient := http.Client{}
 
-		req, err := http.NewRequest("GET", c.url+"/v1/market?page="+string(page), nil)
-		if err != nil {
-			return nil, fmt.Errorf("creating request for getting the page of items: %w", err)
-		}
+	req, err := http.NewRequest("GET", c.url+"/marketplace/v1/items/0", nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request for getting the page of items: %w", err)
+	}
 
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("getting the page of items: %w", err)
-		}
-	*/
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("getting the page of items: %w", err)
+	}
 
 	var items []*marketdomain.MarketItem
 
-	/*
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("reading the response body: %w", err)
-		}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading the response body: %w", err)
+	}
 
-		err = jsonoperations.Decode(body, &items)
-		if err != nil {
-			return nil, fmt.Errorf("decoding the response body: %w", err)
-		}
-	*/
+	err = jsonoperations.Decode(body, &items)
+	if err != nil {
+		return nil, fmt.Errorf("decoding the response body: %w", err)
+	}
 
 	items = append(items, &marketdomain.MarketItem{"-1", "На Бандерасмузі", 100, ""})
 	items = append(items, &marketdomain.MarketItem{"-2", "На велику бавовну", 500, ""})
