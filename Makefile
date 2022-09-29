@@ -15,6 +15,10 @@ docker-remove:
 	make docker-stop
 	docker rm uart-proxy
 
+docker-push:
+	make docker-build
+	docker push uartweb/proxy:latest
+
 docker-deploy:
 	make docker-build
 	make docker-run
