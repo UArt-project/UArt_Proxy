@@ -2,11 +2,11 @@ run:
 	go run cmd/main.go
 
 docker-build:
-	docker build -t uart-proxy .
+	docker build --no-cache -t uartweb/proxy .
 
 docker-run:
 	echo "Running on port 8000"
-	docker run --rm -d -p 8000:8000 --net uart_net --name uart-proxy uart-proxy
+	docker run --rm -d -p 8000:8000 --net uart_net --name uart-proxy uartweb/proxy
 
 docker-stop:
 	docker stop uart-proxy
@@ -14,6 +14,10 @@ docker-stop:
 docker-remove:
 	make docker-stop
 	docker rm uart-proxy
+
+docker-push:
+	make docker-build
+	docker push uartweb/proxy:latest
 
 docker-deploy:
 	make docker-build
