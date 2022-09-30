@@ -21,7 +21,7 @@ type MarketItemResponse struct {
 }
 
 // itemsToResponse converts the market items to the response.
-func itemsToResponse(page int, items []*marketdomain.MarketItem) *MarketPageResponse {
+func itemsToResponse(page int, items []marketdomain.MarketItem) *MarketPageResponse {
 	var returnItems []*MarketItemResponse
 
 	for _, item := range items {

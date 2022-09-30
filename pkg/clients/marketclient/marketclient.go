@@ -12,7 +12,7 @@ import (
 
 type MarketClient interface {
 	// GetPage returns a page of market items.
-	GetPage(page int) ([]*marketdomain.MarketItem, error)
+	GetPage(page int) ([]marketdomain.MarketItem, error)
 }
 
 // MarketServiceClient is a client for the market service.
@@ -29,7 +29,7 @@ func NewMarketServiceClient(url string) *MarketServiceClient {
 }
 
 // GetPage returns a page of market items.
-func (c MarketServiceClient) GetPage(page int) ([]*marketdomain.MarketItem, error) {
+func (c MarketServiceClient) GetPage(page int) ([]marketdomain.MarketItem, error) {
 	httpClient := http.Client{}
 
 	req, err := http.NewRequest("GET", c.url+"/marketplace/v1/items/0", nil)
@@ -42,7 +42,7 @@ func (c MarketServiceClient) GetPage(page int) ([]*marketdomain.MarketItem, erro
 		return nil, fmt.Errorf("getting the page of items: %w", err)
 	}
 
-	var items []*marketdomain.MarketItem
+	var items []marketdomain.MarketItem
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -54,9 +54,9 @@ func (c MarketServiceClient) GetPage(page int) ([]*marketdomain.MarketItem, erro
 		return nil, fmt.Errorf("decoding the response body: %w", err)
 	}
 
-	items = append(items, &marketdomain.MarketItem{"-1", "На Бандерасмузі", 100, ""})
-	items = append(items, &marketdomain.MarketItem{"-2", "На велику бавовну", 500, ""})
-	items = append(items, &marketdomain.MarketItem{"-3", "На зірку смерті", 1000, ""})
+	items = append(items, marketdomain.MarketItem{ID: "-1", Name: "На Бандерасмузі", Price: 100, Photo: ""})
+	items = append(items, marketdomain.MarketItem{ID: "-2", Name: "На велику бавовну", Price: 500, Photo: ""})
+	items = append(items, marketdomain.MarketItem{ID: "-3", Name: "На зірку смерті", Price: 1000, Photo: ""})
 
 	return items, nil
 }

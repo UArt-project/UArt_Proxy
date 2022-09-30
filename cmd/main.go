@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/UArt-project/UArt-proxy/api/v1/rest"
 	"github.com/UArt-project/UArt-proxy/cmd/server"
 	"github.com/UArt-project/UArt-proxy/cmd/server/config"
 	"github.com/UArt-project/UArt-proxy/internal/service"
+	"github.com/UArt-project/UArt-proxy/pkg/cache"
 	"github.com/UArt-project/UArt-proxy/pkg/clients/marketclient"
 	"github.com/UArt-project/UArt-proxy/pkg/configreader"
 	"github.com/UArt-project/UArt-proxy/pkg/cors"
@@ -31,7 +33,8 @@ func main() {
 
 	marketClient := marketclient.NewMarketServiceClient(configreader.GetString("market_service_url"))
 	pool := workerpool.NewPool(configreader.GetInt("worker_pool_size"))
-	appService := service.NewService(marketClient, pool)
+	appCache := cache.NewLocalCache(15 * time.Second)
+	appService := service.NewService(marketClient, pool, appCache)
 	restLogger := logger.NewLogger(os.Stdout, "rest")
 	restAPI := rest.NewRESTApi(appService, restLogger)
 	serverLogger := logger.NewLogger(os.Stdout, "server")
