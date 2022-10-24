@@ -17,37 +17,39 @@ type cachedMarketPage struct {
 
 type LocalCache struct {
 	stop        chan struct{}
-	wg          sync.WaitGroup
-	mu          sync.RWMutex
+	wg          *sync.WaitGroup
+	mu          *sync.RWMutex
 	marketItems map[int]cachedMarketPage
 }
 
 func NewLocalCache(cleanupInterval time.Duration) *LocalCache {
-	lc := &LocalCache{
-		marketItems: make(map[int]cachedMarketPage),
+	localCache := &LocalCache{
 		stop:        make(chan struct{}),
+		wg:          new(sync.WaitGroup),
+		mu:          new(sync.RWMutex),
+		marketItems: make(map[int]cachedMarketPage),
 	}
 
-	lc.wg.Add(1)
+	localCache.wg.Add(1)
 
 	go func(cleanupInterval time.Duration) {
-		defer lc.wg.Done()
-		lc.cleanupLoop(cleanupInterval)
+		defer localCache.wg.Done()
+		localCache.cleanupLoop(cleanupInterval)
 	}(cleanupInterval)
 
-	return lc
+	return localCache
 }
 
 func (lc *LocalCache) cleanupLoop(interval time.Duration) {
-	t := time.NewTicker(interval)
+	ticker := time.NewTicker(interval)
 
-	defer t.Stop()
+	defer ticker.Stop()
 
 	for {
 		select {
 		case <-lc.stop:
 			return
-		case <-t.C:
+		case <-ticker.C:
 			lc.mu.Lock()
 
 			for uid, cu := range lc.marketItems {
@@ -61,7 +63,7 @@ func (lc *LocalCache) cleanupLoop(interval time.Duration) {
 	}
 }
 
-func (lc *LocalCache) stopCleanup() {
+func (lc *LocalCache) stopCleanup() { //nolint:unused
 	close(lc.stop)
 
 	lc.wg.Wait()
@@ -89,7 +91,7 @@ func (lc *LocalCache) Read(id int) ([]marketdomain.MarketItem, error) {
 	return cu.items, nil
 }
 
-func (lc *LocalCache) delete(id int) {
+func (lc *LocalCache) delete(id int) { //nolint:unused
 	lc.mu.Lock()
 	defer lc.mu.Unlock()
 

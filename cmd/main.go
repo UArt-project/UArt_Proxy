@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/UArt-project/UArt-proxy/api/v1/rest"
 	"github.com/UArt-project/UArt-proxy/cmd/server"
 	"github.com/UArt-project/UArt-proxy/cmd/server/config"
 	"github.com/UArt-project/UArt-proxy/internal/service"
 	"github.com/UArt-project/UArt-proxy/pkg/cache"
+	"github.com/UArt-project/UArt-proxy/pkg/clients/authclient"
 	"github.com/UArt-project/UArt-proxy/pkg/clients/marketclient"
 	"github.com/UArt-project/UArt-proxy/pkg/configreader"
 	"github.com/UArt-project/UArt-proxy/pkg/cors"
@@ -31,12 +31,21 @@ func main() {
 		mainLogger.Fatal("setting the config file: %v", err)
 	}
 
-	marketClient := marketclient.NewMarketServiceClient(configreader.GetString("market_service_url"))
+	marketURL := configreader.GetString("market.url")
+	marketTimeout := configreader.GetDuration("market.timeout")
+
+	marketClient := marketclient.NewMarketServiceClient(marketURL, marketTimeout)
+
+	authURL := configreader.GetString("auth.url")
+	authTimeout := configreader.GetDuration("auth.timeout")
+
+	authClient := authclient.NewAuthServiceClient(authURL, authTimeout)
+
 	pool := workerpool.NewPool(configreader.GetInt("worker_pool_size"))
-	appCache := cache.NewLocalCache(15 * time.Second)
-	appService := service.NewService(marketClient, pool, appCache)
+	appCache := cache.NewLocalCache(configreader.GetDuration("cache.cleanup"))
+	appService := service.NewService(marketClient, authClient, pool, appCache)
 	restLogger := logger.NewLogger(os.Stdout, "rest")
-	restAPI := rest.NewRESTApi(appService, restLogger)
+	restAPI := rest.NewAPI(appService, restLogger)
 	serverLogger := logger.NewLogger(os.Stdout, "server")
 	serverConfig := getServerConfig(cors.EnableCORS(restAPI), nil, serverLogger)
 	restServer := server.NewServer(serverConfig)

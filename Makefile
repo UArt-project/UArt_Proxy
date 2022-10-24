@@ -23,6 +23,10 @@ docker-deploy:
 	make docker-build
 	make docker-run
 
+docker-redeploy:
+	make docker-stop
+	make docker-deploy
+
 lint:
 	golangci-lint run
 
