@@ -6,8 +6,8 @@ market:
   timeout: 10s
 
 auth:
-  url: http://localhost:8088
-  # url: http://uart-auth:8080
+  # url: http://localhost:8088
+  url: http://uart-auth:8080
   timeout: 10s
 
 cache:
