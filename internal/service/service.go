@@ -4,8 +4,10 @@ package service
 import (
 	"fmt"
 
+	"github.com/UArt-project/UArt-proxy/domain/authdomain"
 	"github.com/UArt-project/UArt-proxy/domain/marketdomain"
 	"github.com/UArt-project/UArt-proxy/pkg/cache"
+	"github.com/UArt-project/UArt-proxy/pkg/clients/authclient"
 	"github.com/UArt-project/UArt-proxy/pkg/clients/marketclient"
 	"github.com/UArt-project/UArt-proxy/pkg/workerpool"
 )
@@ -14,12 +16,18 @@ import (
 type AppService interface {
 	// GetMarketPage returns a page of market items.
 	GetMarketPage(page int) ([]marketdomain.MarketItem, error)
+
+	GetAuthPage() (string, error)
+
+	GetAuthToken(callbackData authdomain.CallbackRequest) (*authdomain.AuthReturn, error)
 }
 
 // Service is a main application logic.
 type Service struct {
 	// The market client.
 	marketClient marketclient.MarketClient
+	// The auth client.
+	authClient authclient.AuthClient
 	// Worker pool.
 	workerPool *workerpool.WorkerPool
 	// The cache.
@@ -27,9 +35,12 @@ type Service struct {
 }
 
 // NewService creates a new instance of the Service.
-func NewService(marketClient marketclient.MarketClient, workerPool *workerpool.WorkerPool, cache *cache.LocalCache) *Service {
+func NewService(marketClient marketclient.MarketClient, authClient authclient.AuthClient,
+	workerPool *workerpool.WorkerPool, cache *cache.LocalCache,
+) *Service {
 	return &Service{
 		marketClient: marketClient,
+		authClient:   authClient,
 		workerPool:   workerPool,
 		cache:        cache,
 	}
@@ -48,4 +59,24 @@ func (s Service) GetMarketPage(page int) ([]marketdomain.MarketItem, error) {
 	}
 
 	return items, nil
+}
+
+// GetAuthPage returns a auth redirection page.
+func (s Service) GetAuthPage() (string, error) {
+	url, err := s.authClient.SendAuthRequest()
+	if err != nil {
+		return "", fmt.Errorf("getting the auth page: %w", err)
+	}
+
+	return url, nil
+}
+
+// GetAuthToken returns the OAuth data.
+func (s Service) GetAuthToken(callbackData authdomain.CallbackRequest) (*authdomain.AuthReturn, error) {
+	data, err := s.authClient.SendOAuthData(callbackData)
+	if err != nil {
+		return nil, fmt.Errorf("getting the OAuth data: %w", err)
+	}
+
+	return data, nil
 }

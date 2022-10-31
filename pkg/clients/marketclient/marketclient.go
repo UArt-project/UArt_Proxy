@@ -2,9 +2,12 @@
 package marketclient
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/UArt-project/UArt-proxy/domain/marketdomain"
 	"github.com/UArt-project/UArt-proxy/pkg/jsonoperations"
@@ -19,20 +22,27 @@ type MarketClient interface {
 type MarketServiceClient struct {
 	// The url of the market service.
 	url string
+	// Timeout for the request.
+	timeout time.Duration
 }
 
 // NewMarketServiceClient creates a new instance of the MarketServiceClient.
-func NewMarketServiceClient(url string) *MarketServiceClient {
+func NewMarketServiceClient(url string, timeout time.Duration) *MarketServiceClient {
 	return &MarketServiceClient{
-		url: url,
+		url:     url,
+		timeout: timeout,
 	}
 }
 
 // GetPage returns a page of market items.
 func (c MarketServiceClient) GetPage(page int) ([]marketdomain.MarketItem, error) {
-	httpClient := http.Client{}
+	var httpClient http.Client
 
-	req, err := http.NewRequest("GET", c.url+"/marketplace/v1/items/0", nil)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.url+"/marketplace/v1/items/"+strconv.Itoa(page), nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating request for getting the page of items: %w", err)
 	}
@@ -49,14 +59,38 @@ func (c MarketServiceClient) GetPage(page int) ([]marketdomain.MarketItem, error
 		return nil, fmt.Errorf("reading the response body: %w", err)
 	}
 
+	err = resp.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("closing the response body: %w", err)
+	}
+
 	err = jsonoperations.Decode(body, &items)
 	if err != nil {
 		return nil, fmt.Errorf("decoding the response body: %w", err)
 	}
 
-	items = append(items, marketdomain.MarketItem{ID: "-1", Name: "На Бандерасмузі", Price: 100, Photo: ""})
-	items = append(items, marketdomain.MarketItem{ID: "-2", Name: "На велику бавовну", Price: 500, Photo: ""})
-	items = append(items, marketdomain.MarketItem{ID: "-3", Name: "На зірку смерті", Price: 1000, Photo: ""})
+	banderaSmoothiePrice := 100.0
+	bawownaPrice := 500.0
+	deathStarPrice := 1000.0
+
+	items = append(items, marketdomain.MarketItem{
+		ID:    "-1",
+		Name:  "На Бандерасмузі",
+		Price: banderaSmoothiePrice,
+		Photo: "",
+	})
+	items = append(items, marketdomain.MarketItem{
+		ID:    "-2",
+		Name:  "На велику бавовну",
+		Price: bawownaPrice,
+		Photo: "",
+	})
+	items = append(items, marketdomain.MarketItem{
+		ID:    "-3",
+		Name:  "На зірку смерті",
+		Price: deathStarPrice,
+		Photo: "",
+	})
 
 	return items, nil
 }

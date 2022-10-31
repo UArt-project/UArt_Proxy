@@ -8,10 +8,10 @@ import (
 )
 
 func EnableCORS(api http.Handler) http.Handler {
-	headersOK := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type"})
+	headersOK := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Location", "Authorization"})
 	originsOK := handlers.AllowedOrigins([]string{"*"})
 	methodsOK := handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS", "DELETE", "PUT"})
-	exposedHeaders := handlers.ExposedHeaders([]string{"X-Response-Time", "X-Server-Name"})
+	exposedHeaders := handlers.ExposedHeaders([]string{"X-Response-Time", "X-Server-Name", "Location"})
 
 	return handlers.CORS(headersOK, originsOK, methodsOK, exposedHeaders)(api)
 }

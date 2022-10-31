@@ -3,14 +3,15 @@ package rest
 import (
 	"net/http"
 
+	"github.com/UArt-project/UArt-proxy/domain/authdomain"
 	"github.com/UArt-project/UArt-proxy/internal/service"
 	"github.com/UArt-project/UArt-proxy/pkg/jsonoperations"
 	"github.com/UArt-project/UArt-proxy/pkg/logger"
 	"github.com/gorilla/mux"
 )
 
-// RESTApi is responsible for handling REST API requests.
-type RESTApi struct {
+// API is responsible for handling REST API requests.
+type API struct {
 	// The application service.
 	appService service.AppService
 	// Logger.
@@ -19,37 +20,39 @@ type RESTApi struct {
 	router *mux.Router
 }
 
-// NewRESTApi creates a new instance of the RESTApi.
-func NewRESTApi(appService service.AppService, loggr *logger.Logger) *RESTApi {
+// NewAPI creates a new instance of the API.
+func NewAPI(appService service.AppService, loggr *logger.Logger) *API {
 	router := mux.NewRouter()
 
-	api := &RESTApi{
+	api := &API{
 		appService: appService,
 		loggr:      loggr,
 		router:     router,
 	}
 
-	api.HandleFuncs()
+	api.HandleFunc()
 
 	return api
 }
 
-// HandleFuncs registers handlers for REST API requests.
-func (r *RESTApi) HandleFuncs() {
+// HandleFunc registers handlers for REST API requests.
+func (r *API) HandleFunc() {
 	r.router.HandleFunc("/v1/market/{page}", r.getMarketPage).Methods(http.MethodGet)
+	r.router.HandleFunc("/v1/auth", r.getAuth).Methods(http.MethodGet)
+	r.router.HandleFunc("/login/oauth2/code/google", r.getAuthCallback).Methods(http.MethodGet)
 }
 
 // ServeHTTP handles REST API requests.
-func (r *RESTApi) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *API) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.router.ServeHTTP(w, req)
 }
 
 // getMarketPage handles the request for getting a page of market items.
-func (r *RESTApi) getMarketPage(w http.ResponseWriter, req *http.Request) {
+func (r *API) getMarketPage(responseWriter http.ResponseWriter, req *http.Request) {
 	page, err := getPathNumber(req)
 	if err != nil {
 		r.loggr.Error("getting the page number from the path: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		responseWriter.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -57,7 +60,7 @@ func (r *RESTApi) getMarketPage(w http.ResponseWriter, req *http.Request) {
 	items, err := r.appService.GetMarketPage(page)
 	if err != nil {
 		r.loggr.Error("getting the page of items: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		responseWriter.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
@@ -67,18 +70,78 @@ func (r *RESTApi) getMarketPage(w http.ResponseWriter, req *http.Request) {
 	encData, err := jsonoperations.Encode(response)
 	if err != nil {
 		r.loggr.Error("encoding the response body: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		responseWriter.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	responseWriter.Header().Set("Content-Type", "application/json")
+	responseWriter.WriteHeader(http.StatusOK)
 
-	_, err = w.Write(encData)
+	_, err = responseWriter.Write(encData)
 	if err != nil {
 		r.loggr.Error("writing the response body: %v", err)
 
 		return
 	}
+}
+
+// getAuth handles the request for getting the auth url.
+func (r *API) getAuth(responseWriter http.ResponseWriter, req *http.Request) {
+	url, err := r.appService.GetAuthPage()
+	if err != nil {
+		r.loggr.Error("getting the auth page: %v", err)
+		responseWriter.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	// redirect to the auth url
+	responseWriter.Header().Set("Location", url)
+	responseWriter.WriteHeader(http.StatusSeeOther)
+}
+
+// getAuthCallback handles the request for getting the auth token.
+func (r *API) getAuthCallback(w http.ResponseWriter, req *http.Request) {
+	// cookies := req.Cookies()
+
+	// cookie := ""
+
+	// if len(cookies) <= 1 {
+	// r.loggr.Error("no cookies in the request")
+	// w.WriteHeader(http.StatusBadRequest)
+
+	// return
+	// } else {
+	// cookie = cookies[1].Value
+	// }
+
+	callbackData := authdomain.CallbackRequest{
+		// Cookie:   cookie,
+		State:    req.URL.Query().Get("state"),
+		Code:     req.URL.Query().Get("code"),
+		Scope:    req.URL.Query().Get("scope"),
+		AuthUser: req.URL.Query().Get("authuser"),
+		Prompt:   req.URL.Query().Get("prompt"),
+	}
+
+	token, err := r.appService.GetAuthToken(callbackData)
+	if err != nil {
+		r.loggr.Error("getting the auth token: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	// send token.RespCode to the w
+	// w.Header().Set("Location", token.RedirectURL)
+	// w.Header().Add("Set-Cookie", token.RespCode.Header.Get("Set-Cookie"))
+
+	// redirect to the redirect url
+	// w.WriteHeader(token.RespCode.StatusCode)
+
+	// redirect to the redirect url and set the token
+	w.Header().Set("token", token.AuthToken)
+	w.Header().Set("Location", token.RedirectURL)
+	w.WriteHeader(http.StatusSeeOther)
 }

@@ -1,6 +1,8 @@
 package rest
 
-import "github.com/UArt-project/UArt-proxy/domain/marketdomain"
+import (
+	"github.com/UArt-project/UArt-proxy/domain/marketdomain"
+)
 
 type MarketPageResponse struct {
 	// The page of the market items.
@@ -22,7 +24,7 @@ type MarketItemResponse struct {
 
 // itemsToResponse converts the market items to the response.
 func itemsToResponse(page int, items []marketdomain.MarketItem) *MarketPageResponse {
-	var returnItems []*MarketItemResponse
+	returnItems := make([]*MarketItemResponse, 0, len(items))
 
 	for _, item := range items {
 		returnItems = append(returnItems, &MarketItemResponse{

@@ -1,7 +1,17 @@
 worker_pool_size: 8
 
-# market_service_url: http://localhost:8080
-market_service_url: http://uart-marketplace:8080
+market:
+  url: http://uart-marketplace:8080
+  # url: http://localhost:8080
+  timeout: 10s
+
+auth:
+  # url: http://localhost:8088
+  url: http://uart-auth:8080
+  timeout: 10s
+
+cache:
+  cleanup: 15s
 
 server:
   address: ":8000"
